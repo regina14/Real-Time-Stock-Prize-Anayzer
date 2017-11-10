@@ -8,23 +8,32 @@ import argparse
 import json
 import time
 import requests
+import logging
+
 #from googlefinance import getQuotes
 from kafka.errors import(
     KafkaError,
     KafkaTimeoutError
 )
 
+# log set up
+logging.basicConfig()
+logger= logging.getLogger('data-producer')
+
+logger.setLevel(logging.DEBUG)
+
 producer = None
 topic_name = None
 
 def fetch_price(symbol):
 	#getQuotes(symbol)
+	logger.debug('Start to fetch price for %s.' % symbol)
 	rsp = requests.get('https://finance.google.com/finance?q=' + symbol +'&output=json')
 	data = json.loads(rsp.content[6:-2].decode('unicode_escape'))
 	d = json.dumps(data)
-	#price = data['op']
-	#print(price)
+	logger.debug('Recieve stock price %s.' % d)
 	producer.send(topic = topic_name, value = d, timestamp_ms = time.time())
+	logger.debug('Send stock price for %s' % symbol)
 
 if __name__ == '__main__':
 	# - parse user command line argeument
