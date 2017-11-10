@@ -7,6 +7,7 @@ from kafka import KafkaProducer
 import argparse
 import json
 import time
+import atexit
 import requests
 import logging
 
@@ -42,7 +43,13 @@ schedular = BackgroundScheduler()
 schedular.add_executor('threadpool')
 schedular.start()
 
-
+def shutdown_hook():
+	logger.debug('Prepare to exit')
+	producer.flush(10)
+	producer.close()
+	logger.debug('Kafka producer closed')
+	schedular.shutdown()
+	logger.debug('Schedular shut down')
 
 
 
@@ -90,12 +97,5 @@ def fetch_price(symbol):
 	logger.debug('Send stock price for %s' % symbol)
 
 if __name__ == '__main__':
-	# - parse user command line argeument
-	#parser = argparse.ArgumentParser()
-	#parser.add_argument('kafka_broker', help = 'the location of kafka broker')
-	#parser.add_argument('topic_name', help = 'the kafka topic to write to')
-	#args = parser.parse_args()
-	#kafka_broker = args.kafka_broker
-	#topic_name = args.topic_name
-	
+	atexit.register(shutdown_hook)
 	app.run(host = '0.0.0.0', port = app.config['CONFIG_APPLICATION_PORT'])
