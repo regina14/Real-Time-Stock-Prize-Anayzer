@@ -2,13 +2,14 @@
 # - grad stock price
 # - for one stock, grab once a second
 # - change which stock to grab dynamically
-
+from apscheduler.schedulers.background import BackgroundScheduler
 from kafka import KafkaProducer
 import argparse
 import json
 import time
 import requests
 import logging
+
 
 #from googlefinance import getQuotes
 from kafka.errors import(
@@ -24,6 +25,11 @@ logger.setLevel(logging.DEBUG)
 
 producer = None
 topic_name = None
+
+# schedular set up
+schedular = BackgroundScheduler()
+schedular.add_executor('threadpool')
+schedular.start()
 
 def fetch_price(symbol):
 	#getQuotes(symbol)
@@ -44,8 +50,8 @@ if __name__ == '__main__':
 	kafka_broker = args.kafka_broker
 	topic_name = args.topic_name
 	producer = KafkaProducer(bootstrap_servers= kafka_broker)
-	fetch_price('AAPL')
-	#data = 'hello world'
-	#producer.send(topic = topic_name, value = data)
+	schedular.add_job(fetch_price, 'interval', ['AAPL'], seconds = 1, id = 'AAPL')
 
+	while True:
+		pass
 
