@@ -5,6 +5,7 @@
 # - cassandra keyspace/table
 
 import json
+import atexit
 import argparse
 import logging
 import datetime
@@ -23,22 +24,46 @@ consumer = None
 # set up logging 
 logging.basicConfig()
 logger = logging.getLogger('data_storage')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 def covertTime(timestamp):
 	return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
 def persist_data(stock_data, cassandra_session):
-	logging.debug('Begain to save data %s', stock_data)
+	logging.info('Begain to save data %s', stock_data)
 	parsed = json.loads(stock_data)
 	symbol = parsed.get('symbol')
 	trade_time = covertTime(parsed.get('regularMarketTime'))
 	price = float(parsed.get('regularMarketPrice').get('raw'))
-	logging.debug("stock symbol is %s, price is %f" % (symbol, price))
+	logging.info("stock symbol is %s, price is %f" % (symbol, price))
 	#statement = "INSERT INTO %s (stock_symbol, trade_time, trade_price) VALUES ('%s', '%s', %f)" % (data_table, symbol, tradetime, price)
 	statement = "INSERT INTO %s (stock_symbol, trade_time, trade_price) VALUES ('%s', '%s', %f)" % (data_table, symbol, trade_time, price)
 	cassandra_session.execute(statement);
 	logger.info("Persist data to cassandra for symbol %s, price %f, tradetime %s" % (symbol, price, trade_time))
 	
+def shutdown_hook(consumer, session):
+	try:
+		logger.info("Closing kafkaConsumer...")
+		consumer.close()
+		logging.info("Kafka Consumer closed")
+		logger.info("Closing cassandra session...")
+		session.shutdown()
+		logger.info("Cassandra_session shut down")
+	except KafkaError as kafka_error:
+		logger.warn("Failed to close kafka consumer caused by %s", kafka_error.message)
+	finally:
+		logger.info("Existing program")	
+
+	'''
+	try: 
+		logging.info("Closing kafka consumer...")
+		consumer.close()
+		logging.info("Kafka consumer closed.")
+		logging.info("Closing cassandra session...")
+		session.shutdown_hook()
+		logging.info("Cassandra session closed.")
+	except Exception as e:
+		logging.warn("Kafka consumer cannot be closed.")
+		'''
 
 if __name__ == '__main__':
 	# set up command line for arguments
@@ -75,6 +100,9 @@ if __name__ == '__main__':
 	session.set_keyspace(key_space)
 	session.execute("CREATE TABLE IF NOT EXISTS %s (stock_symbol text, trade_time timestamp, trade_price float, PRIMARY KEY (stock_symbol, trade_time))" % data_table)
 					#"CREATE TABLE IF NOT EXISTS %s (stock_symbol text, trade_time timestamp, trade_price float, PRIMARY KEY (stock_symbol, trade_time))" % data_table
+
+	# - setup shutdown hook
+	atexit.register(shutdown_hook, consumer, session)
 
 	for msg in consumer:
 		persist_data(msg.value, session)
