@@ -98,17 +98,14 @@ def fetch_price(symbol):
 	i2=r.find("\n", i1)
 	i2=r.rfind(';', i1, i2)
 	jsonstr=r[i1:i2]   
-
+	
 	data = json.loads(jsonstr)['context']['dispatcher']['stores']['QuoteSummaryStore']['price']
-	d = json.dumps(data)
-	'''
-	rsp = requests.get('https://finance.google.com/finance?q=' + symbol +'&output=json')
-	data = json.loads(rsp.content[6:-2].decode('unicode_escape'))
-	d = json.dumps(data)
-	'''
-	logger.debug('Recieve stock price %s.' % d)
+	ss = data["symbol"].encode('utf-8')
+	pp = data["regularMarketPrice"]["raw"]
+	d = json.dumps(data, indent = 2)
+	logger.debug('Recieve stock from %s price %f.' % (ss, pp))
 	producer.send(topic = topic_name, value = d, timestamp_ms = time.time())
-	logger.debug('Send stock price for %s' % symbol)
+	logger.debug('Send stock price for %s\n' % symbol)
 
 if __name__ == '__main__':
 	atexit.register(shutdown_hook)

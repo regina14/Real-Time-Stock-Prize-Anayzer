@@ -1,4 +1,3 @@
-
 // - get command line arguments
 var argv = require('minimist')(process.argv.slice(2));
 var port = argv['port'];
@@ -31,10 +30,9 @@ app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
 app.use('/d3', express.static(__dirname + '/node_modules/d3/'));
 app.use('/nvd3', express.static(__dirname + '/node_modules/nvd3/build/'));
 app.use('/bootstrap', express.static(__dirname + '/node_modules/bootstrap/dist'));
-//app.use('/socket.io', express.static(__dirname + '/node_modules/socket.io/lib' ))
 
-server.listen(3000, function () {
-    console.log('Server started at port %d.', 3000);
+server.listen(port, function () {
+    console.log('Server started at port %d.', port);
 });
 
 // - setup shutdown hooks
@@ -44,7 +42,6 @@ var shutdown_hook = function () {
     console.log('Shutting down app');
     process.exit();
 };
-
 
 process.on('SIGTERM', shutdown_hook);
 process.on('SIGINT', shutdown_hook);
