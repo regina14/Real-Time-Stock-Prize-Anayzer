@@ -30,30 +30,6 @@ def shutdown_hook(producer):
 	producer.close(10)
 
 def process(stream):
-	# - count average for single stock
-	"""
-	num_of_records = rdd.count()
-	if (num_of_records == 0):
-		return
-	# price_sum = rdd.map(lambda record: float(json.loads(record[1].decode('utf-8'))[0].get('LastTradePrice'))).reduce(lambda a, b: a + b)
-	price_sum =  rdd.map(lambda record: float(json.loads(record[1].decode('utf-8')).get('regularMarketPrice').get('raw'))).reduce(lambda a, b: a + b)
-	average = price_sum / num_of_records
-	results = rdd.collect()
-	symbol = json.loads(results[0][1].decode('utf-8')).get('symbol')
-	current_time = time.time()
-	logger.info('Receive %d records from a, average price is %f, current time is %f' % (num_of_records, average, current_time))
-	data = json.dumps({
-		'symbol': symbol,
-		'timestamp': current_time,
-		'average': average
-		})
-	#record = json.loads(data[1].decode('utf-8'))[0]
-	try:
-		kafka_producer.send(new_topic, value = data)
-		
-	except Exception:
-		logger.warn('Fail to send data.')
-	"""
 	def send_to_kafka(rdd):
 		results = rdd.collect()
 		for r in results:
@@ -69,7 +45,7 @@ def process(stream):
 				kafka_producer.send(new_topic, value=data)
 			except KafkaError as error:
 				logger.warn('Failed to send average stock price to kafka, caused by: %s', error.message)
-	
+
 	def pair(data):
 		record = json.loads(data[1].decode('utf-8'))
 		#print record
