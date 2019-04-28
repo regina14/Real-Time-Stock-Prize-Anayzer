@@ -1,0 +1,7 @@
+# - connect to any kafka broker, ip and broker port
+# - grad stock price
+# - for one stock, grab once a second
+# - change which stock to grab dynamically
+
+if __main__ = '__main__':
+    
