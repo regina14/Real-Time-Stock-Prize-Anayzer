@@ -2,6 +2,9 @@
 
 source env/bin/activate
 
+<<<<<<< HEAD
 export ENV_CONFIG_FILE=config/dev.cfg
 
+=======
+>>>>>>> 4fe6ee8c5397efe19b936364a7c00c79e60219fa
 python ./kafka/data-producer.py
